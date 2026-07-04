@@ -10,6 +10,62 @@ const CATEGORIES = [
   '债券类', '电力公用', '资源材料', '商品类', '农业', '其他'
 ]
 
+const PERIODS = [
+  { key: 'day', label: '日K' },
+  { key: 'week', label: '周K' },
+  { key: 'month', label: '月K' },
+  { key: 'quarter', label: '季K' },
+  { key: 'year', label: '年K' },
+]
+
+// Aggregate daily data into larger periods
+function aggregateKline(data, period) {
+  if (!data || data.length === 0) return data
+  if (period === 'day') return data
+
+  const getGroupKey = (dateStr) => {
+    const d = new Date(dateStr)
+    const y = d.getFullYear()
+    const m = d.getMonth() + 1
+    if (period === 'week') {
+      // ISO week: get Monday of the week
+      const day = d.getDay() || 7
+      const mon = new Date(d)
+      mon.setDate(d.getDate() - day + 1)
+      return `${mon.getFullYear()}-${String(mon.getMonth()+1).padStart(2,'0')}-${String(mon.getDate()).padStart(2,'0')}`
+    }
+    if (period === 'month') return `${y}-${String(m).padStart(2,'0')}`
+    if (period === 'quarter') return `${y}Q${Math.ceil(m/3)}`
+    if (period === 'year') return `${y}`
+    return dateStr
+  }
+
+  const groups = []
+  let currentKey = null
+  let currentGroup = []
+
+  for (const row of data) {
+    const key = getGroupKey(row.date)
+    if (key !== currentKey) {
+      if (currentGroup.length > 0) groups.push(currentGroup)
+      currentGroup = [row]
+      currentKey = key
+    } else {
+      currentGroup.push(row)
+    }
+  }
+  if (currentGroup.length > 0) groups.push(currentGroup)
+
+  return groups.map(g => ({
+    date: g[g.length - 1].date,
+    open: g[0].open,
+    close: g[g.length - 1].close,
+    high: Math.max(...g.map(r => r.high)),
+    low: Math.min(...g.map(r => r.low)),
+    volume: g.reduce((s, r) => s + (r.volume || 0), 0),
+  }))
+}
+
 function App() {
   const [page, setPage] = useState('kline') // 'kline' | 'ranking'
   const [etfList, setEtfList] = useState([])
@@ -18,12 +74,13 @@ function App() {
   const [searchText, setSearchText] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('全部')
   const [klineData, setKlineData] = useState(null)
+  const [period, setPeriod] = useState('day')
   const [loading, setLoading] = useState(false)
   const chartRef = useRef(null)
   const chartInstance = useRef(null)
 
   useEffect(() => {
-    fetch('/etf_list.json')
+    fetch(`${import.meta.env.BASE_URL}etf_list.json`)
       .then(res => res.json())
       .then(data => {
         setEtfList(data)
@@ -48,7 +105,7 @@ function App() {
     if (!selectedEtf) return
     setLoading(true)
     const filename = `${selectedEtf.market}${selectedEtf.code}`
-    fetch(`/etfs/${filename}.csv`)
+    fetch(`${import.meta.env.BASE_URL}etfs/${filename}.csv`)
       .then(res => res.text())
       .then(text => {
         const result = Papa.parse(text, { header: true, dynamicTyping: true, skipEmptyLines: true })
@@ -83,10 +140,11 @@ function App() {
       chartInstance.current = echarts.init(chartRef.current)
     }
 
-    const dates = klineData.map(d => d.date)
-    const ohlc = klineData.map(d => [d.open, d.close, d.low, d.high])
-    const volumes = klineData.map(d => d.volume)
-    const volumeColors = klineData.map(d => d.close >= d.open ? '#ef5350' : '#26a69a')
+    const displayData = aggregateKline(klineData, period)
+    const dates = displayData.map(d => d.date)
+    const ohlc = displayData.map(d => [d.open, d.close, d.low, d.high])
+    const volumes = displayData.map(d => d.volume)
+    const volumeColors = displayData.map(d => d.close >= d.open ? '#ef5350' : '#26a69a')
 
     const option = {
       animation: false,
@@ -104,7 +162,7 @@ function App() {
         formatter: function(params) {
           if (!params[0]) return ''
           const idx = params[0].dataIndex
-          const row = klineData[idx]
+          const row = displayData[idx]
           return `<div style="font-size:13px">
             <b>${row.date}</b><br/>
             开盘: ${row.open}<br/>
@@ -148,7 +206,7 @@ function App() {
     const handleResize = () => chartInstance.current?.resize()
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
-  }, [klineData, selectedEtf, page])
+  }, [klineData, selectedEtf, page, period])
 
   // Handle ETF selection from ranking page
   const handleRankingSelect = (etf) => {
@@ -212,6 +270,15 @@ function App() {
             </div>
           </div>
           <div className="main">
+            <div className="period-bar">
+              {PERIODS.map(p => (
+                <button
+                  key={p.key}
+                  className={`period-btn ${period === p.key ? 'active' : ''}`}
+                  onClick={() => setPeriod(p.key)}
+                >{p.label}</button>
+              ))}
+            </div>
             {loading && <div className="loading">加载中...</div>}
             <div ref={chartRef} className="chart-container" />
           </div>

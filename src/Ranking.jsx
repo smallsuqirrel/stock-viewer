@@ -17,7 +17,7 @@ function Ranking({ onSelectEtf }) {
   const [expandedCats, setExpandedCats] = useState(new Set())
 
   useEffect(() => {
-    fetch('/etf_ranking.json')
+    fetch(`${import.meta.env.BASE_URL}etf_ranking.json`)
       .then(res => res.json())
       .then(d => setData(d))
   }, [])
