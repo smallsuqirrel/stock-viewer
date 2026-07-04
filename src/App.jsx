@@ -118,18 +118,10 @@ function App() {
   // Reinitialize chart when switching back to kline page
   useEffect(() => {
     if (page === 'kline' && chartRef.current) {
-      // Dispose old instance since DOM was recreated
-      if (chartInstance.current) {
-        chartInstance.current.dispose()
-        chartInstance.current = null
+      if (!chartInstance.current) {
+        chartInstance.current = echarts.init(chartRef.current)
       }
-      chartInstance.current = echarts.init(chartRef.current)
-    }
-    return () => {
-      if (chartInstance.current) {
-        chartInstance.current.dispose()
-        chartInstance.current = null
-      }
+      chartInstance.current.resize()
     }
   }, [page])
 
@@ -231,8 +223,7 @@ function App() {
         </div>
       </nav>
 
-      {page === 'kline' ? (
-        <div className="kline-layout">
+      <div className="kline-layout" style={{ display: page === 'kline' ? 'flex' : 'none' }}>
           <div className="sidebar">
             <div className="sidebar-header">
               {selectedEtf && <button className="back-btn" onClick={handleBack}>← 返回排行</button>}
@@ -283,11 +274,10 @@ function App() {
             <div ref={chartRef} className="chart-container" />
           </div>
         </div>
-      ) : (
-        <div className="ranking-layout">
+
+        <div className="ranking-layout" style={{ display: page === 'ranking' ? 'block' : 'none' }}>
           <Ranking onSelectEtf={handleRankingSelect} />
         </div>
-      )}
     </div>
   )
 }
