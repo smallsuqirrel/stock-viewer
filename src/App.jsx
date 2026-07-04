@@ -68,7 +68,9 @@ function aggregateKline(data, period) {
 
 function App() {
   const [page, setPage] = useState('kline') // 'kline' | 'ranking'
+  const [assetType, setAssetType] = useState('etf') // 'etf' | 'stock'
   const [etfList, setEtfList] = useState([])
+  const [stockList, setStockList] = useState([])
   const [filteredList, setFilteredList] = useState([])
   const [selectedEtf, setSelectedEtf] = useState(null)
   const [searchText, setSearchText] = useState('')
@@ -79,19 +81,39 @@ function App() {
   const chartRef = useRef(null)
   const chartInstance = useRef(null)
 
+  // Load ETF list
   useEffect(() => {
     fetch(`${import.meta.env.BASE_URL}etf_list.json`)
       .then(res => res.json())
       .then(data => {
         setEtfList(data)
-        setFilteredList(data)
-        if (data.length > 0) setSelectedEtf(data[0])
+        if (assetType === 'etf') {
+          setFilteredList(data)
+          if (data.length > 0) setSelectedEtf(data[0])
+        }
       })
   }, [])
 
+  // Load Stock list
   useEffect(() => {
-    let list = etfList
-    if (selectedCategory !== '全部') {
+    fetch(`${import.meta.env.BASE_URL}stock_list.json`)
+      .then(res => res.json())
+      .then(data => setStockList(data))
+  }, [])
+
+  // Switch asset type
+  useEffect(() => {
+    setSearchText('')
+    setSelectedCategory('全部')
+    const list = assetType === 'etf' ? etfList : stockList
+    setFilteredList(list)
+    if (list.length > 0) setSelectedEtf(list[0])
+  }, [assetType])
+
+  useEffect(() => {
+    const sourceList = assetType === 'etf' ? etfList : stockList
+    let list = sourceList
+    if (assetType === 'etf' && selectedCategory !== '全部') {
       list = list.filter(e => e.category === selectedCategory)
     }
     if (searchText.trim()) {
@@ -99,13 +121,14 @@ function App() {
       list = list.filter(e => e.code.includes(text) || e.name.toLowerCase().includes(text))
     }
     setFilteredList(list)
-  }, [searchText, selectedCategory, etfList])
+  }, [searchText, selectedCategory, etfList, stockList, assetType])
 
   useEffect(() => {
     if (!selectedEtf) return
     setLoading(true)
     const filename = `${selectedEtf.market}${selectedEtf.code}`
-    fetch(`${import.meta.env.BASE_URL}etfs/${filename}.csv`)
+    const folder = assetType === 'etf' ? 'etfs' : 'stocks'
+    fetch(`${import.meta.env.BASE_URL}${folder}/${filename}.csv`)
       .then(res => res.text())
       .then(text => {
         const result = Papa.parse(text, { header: true, dynamicTyping: true, skipEmptyLines: true })
@@ -113,7 +136,7 @@ function App() {
         setLoading(false)
       })
       .catch(() => setLoading(false))
-  }, [selectedEtf])
+  }, [selectedEtf, assetType])
 
   // Reinitialize chart when switching back to kline page
   useEffect(() => {
@@ -216,9 +239,10 @@ function App() {
     <div className="app">
       {/* Top navigation */}
       <nav className="top-nav">
-        <div className="nav-brand">ETF 可视化</div>
+        <div className="nav-brand">行情可视化</div>
         <div className="nav-tabs">
-          <button className={`nav-tab ${page === 'kline' ? 'active' : ''}`} onClick={() => setPage('kline')}>K线图</button>
+          <button className={`nav-tab ${page === 'kline' && assetType === 'etf' ? 'active' : ''}`} onClick={() => { setAssetType('etf'); setPage('kline') }}>ETF</button>
+          <button className={`nav-tab ${page === 'kline' && assetType === 'stock' ? 'active' : ''}`} onClick={() => { setAssetType('stock'); setPage('kline') }}>股票</button>
           <button className={`nav-tab ${page === 'ranking' ? 'active' : ''}`} onClick={() => setPage('ranking')}>板块排行</button>
         </div>
       </nav>
@@ -238,7 +262,7 @@ function App() {
               />
             </div>
             <div className="category-tabs">
-              {CATEGORIES.map(cat => (
+              {assetType === 'etf' && CATEGORIES.map(cat => (
                 <button
                   key={cat}
                   className={`cat-btn ${selectedCategory === cat ? 'active' : ''}`}
@@ -255,7 +279,7 @@ function App() {
                 >
                   <span className="etf-code">{etf.code}</span>
                   <span className="etf-name">{etf.name}</span>
-                  <span className="etf-cat">{etf.category}</span>
+                  {etf.category && <span className="etf-cat">{etf.category}</span>}
                 </div>
               ))}
             </div>
