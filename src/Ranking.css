@@ -1,0 +1,193 @@
+.ranking {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.ranking-header {
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-bottom: 1px solid #2a2a4a;
+}
+
+.ranking-header h2 {
+  font-size: 18px;
+  color: #7581bd;
+}
+
+.ranking-date {
+  font-size: 12px;
+  color: #888;
+}
+
+.ranking-controls {
+  padding: 12px 24px;
+  border-bottom: 1px solid #2a2a4a;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.control-group label {
+  font-size: 13px;
+  color: #888;
+}
+
+.ctrl-btn {
+  padding: 4px 12px;
+  font-size: 12px;
+  border: 1px solid #3a3a5a;
+  border-radius: 4px;
+  background: transparent;
+  color: #aaa;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.ctrl-btn:hover {
+  border-color: #7581bd;
+  color: #ccc;
+}
+
+.ctrl-btn.active {
+  background: #7581bd;
+  border-color: #7581bd;
+  color: #fff;
+}
+
+.ranking-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.ranking-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.ranking-body::-webkit-scrollbar-thumb {
+  background: #3a3a5a;
+  border-radius: 4px;
+}
+
+.cat-section {
+  margin-bottom: 2px;
+}
+
+.cat-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 24px;
+  cursor: pointer;
+  background: #1c2640;
+  border-bottom: 1px solid #2a2a4a;
+  transition: background 0.15s;
+}
+
+.cat-header:hover {
+  background: #223050;
+}
+
+.cat-expand {
+  font-size: 10px;
+  color: #666;
+  width: 14px;
+}
+
+.cat-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #e0e0e0;
+  min-width: 80px;
+}
+
+.cat-count {
+  font-size: 12px;
+  color: #666;
+  min-width: 40px;
+}
+
+.cat-gain {
+  font-size: 13px;
+  font-weight: 500;
+  min-width: 120px;
+}
+
+.cat-vol {
+  font-size: 12px;
+  color: #888;
+}
+
+.etf-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.etf-table thead {
+  position: sticky;
+  top: 0;
+  background: #16213e;
+}
+
+.etf-table th {
+  padding: 6px 12px;
+  text-align: left;
+  color: #888;
+  font-weight: 500;
+  border-bottom: 1px solid #2a2a4a;
+}
+
+.etf-table td {
+  padding: 6px 12px;
+  color: #ccc;
+  border-bottom: 1px solid #1e2a45;
+}
+
+.etf-row {
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.etf-row:hover {
+  background: #1f2b47;
+}
+
+.col-code {
+  color: #7581bd;
+  font-weight: 500;
+}
+
+.col-name {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.col-cap {
+  color: #888;
+}
+
+.up {
+  color: #ef5350;
+}
+
+.down {
+  color: #26a69a;
+}
+
+.hot {
+  color: #ffab40;
+  font-weight: 600;
+}
